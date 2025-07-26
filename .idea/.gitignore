@@ -6,3 +6,54 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+### IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+/out/
+
+### Eclipse ###
+.classpath
+.project
+.settings/
+
+### Build output ###
+/target/
+/build/
+/.gradle/
+
+### Maven Wrapper ###
+/.mvn/
+/mvnw
+/mvnw.cmd
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+
+### Application config ###
+.env
+application.properties
+application.yml
+
+### Keystores and certs ###
+*.jks
+*.p12
+*.pem
+*.crt
+*.key
+*.csr
+
+### HTTP client ###
+/httpRequests/
+
+### Others ###
+*.swp
+*.swo
+*.bak
+*.tmp
