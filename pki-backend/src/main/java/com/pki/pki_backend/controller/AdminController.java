@@ -1,15 +1,15 @@
 package com.pki.pki_backend.controller;
 
+import com.pki.pki_backend.dto.CertificateDetailsDTO;
 import com.pki.pki_backend.dto.CreateCaUserRequest;
 import com.pki.pki_backend.dto.IssueCertificateRequestDTO;
 import com.pki.pki_backend.service.CertificateService;
 import com.pki.pki_backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody; // VAŽNO: Dodati import
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -43,6 +43,12 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error issuing certificate: " + e.getMessage());
         }
+    }
+    @GetMapping("/certificates")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<List<CertificateDetailsDTO>> getAllCertificates() {
+        List<CertificateDetailsDTO> certificates = certificateService.getAll();
+        return ResponseEntity.ok(certificates);
     }
 }
 

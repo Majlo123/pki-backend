@@ -1,5 +1,6 @@
 package com.pki.pki_backend.service;
 
+import com.pki.pki_backend.dto.CertificateDetailsDTO;
 import com.pki.pki_backend.dto.IssueCertificateRequestDTO;
 import com.pki.pki_backend.dto.SubjectDataDTO;
 import com.pki.pki_backend.model.Certificate;
@@ -29,6 +30,8 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CertificateService {
@@ -54,7 +57,11 @@ public class CertificateService {
         this.passwordEncoder = passwordEncoder;
         Security.addProvider(new BouncyCastleProvider());
     }
-
+    public List<CertificateDetailsDTO> getAll() {
+        return certificateRepository.findAll().stream()
+                .map(CertificateDetailsDTO::new)
+                .collect(Collectors.toList());
+    }
     public Certificate issueCertificate(IssueCertificateRequestDTO request) throws Exception {
         KeyPair keyPair = generateKeyPair();
         X500Name subjectName = buildX500Name(request.getSubjectData());
