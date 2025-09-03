@@ -65,58 +65,72 @@ public class CertificateService {
 
         X509Certificate issuedCertificate;
         Certificate certificateEntity = new Certificate();
-        String encryptedPassword;
+        String encryptedPassword = null; // Inicijalno null
 
-        if (request.getType() == CertificateType.ROOT) {
-            X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
-                    subjectName, new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
+        if (request.getType() == CertificateType.ROOT || request.getType() == CertificateType.INTERMEDIATE) {
+            IssuerData issuerData;
+            X509Certificate[] chain;
+
+            X509v3CertificateBuilder certificateBuilder;
+
+            if (request.getType() == CertificateType.ROOT) {
+                certificateBuilder = new JcaX509v3CertificateBuilder(
+                        subjectName, new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
+
+                ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+                X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
+                issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+
+                certificateEntity.setIssuer(subjectName.toString());
+                certificateEntity.setIssuerCertificate(null);
+                chain = new X509Certificate[]{issuedCertificate};
+            } else { // INTERMEDIATE
+                Certificate issuerEntity = certificateRepository.findBySerialNumber(request.getIssuerSerialNumber())
+                        .orElseThrow(() -> new RuntimeException("Issuer certificate not found."));
+                validateIssuer(issuerEntity, validTo);
+                issuerData = loadIssuerDataFromKeystore(issuerEntity);
+
+                certificateBuilder = new JcaX509v3CertificateBuilder(
+                        issuerData.getCertificate(), new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
+
+                ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(issuerData.getPrivateKey());
+                X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
+                issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+
+                issuedCertificate.verify(issuerData.getCertificate().getPublicKey());
+
+                certificateEntity.setIssuer(issuerData.getCertificate().getSubjectX500Principal().getName());
+                certificateEntity.setIssuerCertificate(issuerEntity);
+                chain = new X509Certificate[]{issuedCertificate, issuerData.getCertificate()};
+            }
+
             addCaExtensions(certificateBuilder);
-            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
-            X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
-            issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
-
-            certificateEntity.setIssuer(subjectName.toString());
             certificateEntity.setCa(true);
-            certificateEntity.setType(CertificateType.ROOT);
-            certificateEntity.setIssuerCertificate(null);
-            encryptedPassword = saveToKeystore(serialNumber, keyPair.getPrivate(), new X509Certificate[]{issuedCertificate});
+            certificateEntity.setType(request.getType());
+            encryptedPassword = saveToKeystore(serialNumber, keyPair.getPrivate(), chain);
 
-        } else if (request.getType() == CertificateType.INTERMEDIATE) {
+        } else if (request.getType() == CertificateType.END_ENTITY) {
             Certificate issuerEntity = certificateRepository.findBySerialNumber(request.getIssuerSerialNumber())
                     .orElseThrow(() -> new RuntimeException("Issuer certificate not found."));
             validateIssuer(issuerEntity, validTo);
             IssuerData issuerData = loadIssuerDataFromKeystore(issuerEntity);
 
-
             X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
-                    issuerData.getCertificate(), // Prosleđujemo ceo sertifikat
-                    new BigInteger(serialNumber),
-                    validFrom,
-                    validTo,
-                    subjectName,
-                    keyPair.getPublic());
+                    issuerData.getCertificate(), new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
 
-            addCaExtensions(certificateBuilder);
+            addEndEntityExtensions(certificateBuilder); // Koristimo ekstenzije za End-Entity
+
             ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(issuerData.getPrivateKey());
             X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
             issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
 
-            // Provera validnosti lanca odmah nakon kreiranja
-            try {
-                issuedCertificate.verify(issuerData.getCertificate().getPublicKey());
-            } catch (Exception e) {
-                // Ako verifikacija ne uspe, bacamo eksplicitan izuzetak.
-                throw new RuntimeException("Error issuing certificate: Certificate chain is not valid.", e);
-            }
-
+            issuedCertificate.verify(issuerData.getCertificate().getPublicKey());
 
             certificateEntity.setIssuer(issuerData.getCertificate().getSubjectX500Principal().getName());
-            certificateEntity.setCa(true);
-            certificateEntity.setType(CertificateType.INTERMEDIATE);
+            certificateEntity.setCa(false); // Ovo NIJE CA sertifikat
+            certificateEntity.setType(CertificateType.END_ENTITY);
             certificateEntity.setIssuerCertificate(issuerEntity);
-
-            X509Certificate[] chain = {issuedCertificate, issuerData.getCertificate()};
-            encryptedPassword = saveToKeystore(serialNumber, keyPair.getPrivate(), chain);
+            // Privatni ključ se NE ČUVA, pa je encryptedPassword ostaje null
 
         } else {
             throw new IllegalArgumentException("Unsupported certificate type.");
@@ -189,6 +203,15 @@ public class CertificateService {
         certificateBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
     }
 
+    // Nova metoda za ekstenzije End-Entity sertifikata
+    private void addEndEntityExtensions(X509v3CertificateBuilder certificateBuilder) throws Exception {
+        // BasicConstraints(false) znači da ovaj sertifikat ne može da potpisuje druge
+        certificateBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        // KeyUsage definiše da se ključ koristi samo za digitalni potpis
+        certificateBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
+    }
+
+
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048, new SecureRandom());
@@ -205,4 +228,3 @@ public class CertificateService {
         return builder.build();
     }
 }
-
