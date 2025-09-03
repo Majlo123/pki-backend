@@ -5,29 +5,30 @@ import com.pki.pki_backend.dto.SubjectDataDTO;
 import com.pki.pki_backend.model.Certificate;
 import com.pki.pki_backend.model.CertificateType;
 import com.pki.pki_backend.repository.CertificateRepository;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 public class CertificateService {
@@ -35,88 +36,157 @@ public class CertificateService {
     private final CertificateRepository certificateRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Lokacija za čuvanje keystore fajlova
-    private static final String KEYSTORE_DIRECTORY = "src/main/resources/keystores/";
+    // Pomoćna privatna klasa za čuvanje podataka o izdavaocu
+    private static class IssuerData {
+        private final PrivateKey privateKey;
+        private final X509Certificate certificate;
+
+        public IssuerData(PrivateKey privateKey, X509Certificate certificate) {
+            this.privateKey = privateKey;
+            this.certificate = certificate;
+        }
+        public PrivateKey getPrivateKey() { return privateKey; }
+        public X509Certificate getCertificate() { return certificate; }
+    }
 
     public CertificateService(CertificateRepository certificateRepository, PasswordEncoder passwordEncoder) {
         this.certificateRepository = certificateRepository;
         this.passwordEncoder = passwordEncoder;
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     public Certificate issueCertificate(IssueCertificateRequestDTO request) throws Exception {
-        // Dodajemo Bouncy Castle kao security provider-a
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        KeyPair keyPair = generateKeyPair();
+        X500Name subjectName = buildX500Name(request.getSubjectData());
+        String serialNumber = new BigInteger(128, new SecureRandom()).toString();
+
+        Date validFrom = request.getValidFrom();
+        Date validTo = request.getValidTo();
+
+        X509Certificate issuedCertificate;
+        Certificate certificateEntity = new Certificate();
+        String encryptedPassword;
 
         if (request.getType() == CertificateType.ROOT) {
-            return issueSelfSignedCertificate(request);
+            X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
+                    subjectName, new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
+            addCaExtensions(certificateBuilder);
+            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+            X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
+            issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+
+            certificateEntity.setIssuer(subjectName.toString());
+            certificateEntity.setCa(true);
+            certificateEntity.setType(CertificateType.ROOT);
+            certificateEntity.setIssuerCertificate(null);
+            encryptedPassword = saveToKeystore(serialNumber, keyPair.getPrivate(), new X509Certificate[]{issuedCertificate});
+
+        } else if (request.getType() == CertificateType.INTERMEDIATE) {
+            Certificate issuerEntity = certificateRepository.findBySerialNumber(request.getIssuerSerialNumber())
+                    .orElseThrow(() -> new RuntimeException("Issuer certificate not found."));
+            validateIssuer(issuerEntity, validTo);
+            IssuerData issuerData = loadIssuerDataFromKeystore(issuerEntity);
+
+
+            X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
+                    issuerData.getCertificate(), // Prosleđujemo ceo sertifikat
+                    new BigInteger(serialNumber),
+                    validFrom,
+                    validTo,
+                    subjectName,
+                    keyPair.getPublic());
+
+            addCaExtensions(certificateBuilder);
+            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(issuerData.getPrivateKey());
+            X509CertificateHolder certificateHolder = certificateBuilder.build(contentSigner);
+            issuedCertificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certificateHolder);
+
+            // Provera validnosti lanca odmah nakon kreiranja
+            try {
+                issuedCertificate.verify(issuerData.getCertificate().getPublicKey());
+            } catch (Exception e) {
+                // Ako verifikacija ne uspe, bacamo eksplicitan izuzetak.
+                throw new RuntimeException("Error issuing certificate: Certificate chain is not valid.", e);
+            }
+
+
+            certificateEntity.setIssuer(issuerData.getCertificate().getSubjectX500Principal().getName());
+            certificateEntity.setCa(true);
+            certificateEntity.setType(CertificateType.INTERMEDIATE);
+            certificateEntity.setIssuerCertificate(issuerEntity);
+
+            X509Certificate[] chain = {issuedCertificate, issuerData.getCertificate()};
+            encryptedPassword = saveToKeystore(serialNumber, keyPair.getPrivate(), chain);
+
+        } else {
+            throw new IllegalArgumentException("Unsupported certificate type.");
         }
-        throw new IllegalArgumentException("Unsupported certificate type for now.");
+
+        certificateEntity.setSerialNumber(serialNumber);
+        certificateEntity.setSubject(subjectName.toString());
+        certificateEntity.setValidFrom(validFrom.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        certificateEntity.setValidTo(validTo.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        certificateEntity.setRevoked(false);
+        certificateEntity.setEncryptedKeystorePassword(encryptedPassword);
+
+        return certificateRepository.save(certificateEntity);
     }
 
-    private Certificate issueSelfSignedCertificate(IssueCertificateRequestDTO request) throws Exception {
-        KeyPair keyPair = generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
+    private void validateIssuer(Certificate issuer, Date newCertValidToDate) {
+        LocalDateTime newCertValidTo = newCertValidToDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-        X500Name subjectAndIssuerName = buildX500Name(request.getSubjectData());
-        BigInteger serialNumber = new BigInteger(64, new SecureRandom());
-
-        JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption");
-        ContentSigner contentSigner = contentSignerBuilder.build(privateKey);
-
-        JcaX509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
-                subjectAndIssuerName,
-                serialNumber,
-                request.getValidFrom(),
-                request.getValidTo(),
-                subjectAndIssuerName,
-                publicKey
-        );
-
-        // --- DODAVANJE EKSTENZIJA ---
-        // BasicConstraints(true) -> Označava da je sertifikat CA
-        certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
-        // KeyUsage -> Definiše da se ključ koristi za potpisivanje sertifikata i CRL listi
-        certBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-
-        X509CertificateHolder certHolder = certBuilder.build(contentSigner);
-        X509Certificate certificate = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
-
-        // --- ČUVANJE PRIVATNOG KLJUČA U KEYSTORE ---
-        String keystorePassword = generateRandomPassword();
-        saveToKeystore(serialNumber.toString(), privateKey, certificate, keystorePassword);
-
-        // Čuvanje sertifikata u bazu
-        Certificate newCertificate = new Certificate();
-        newCertificate.setSerialNumber(serialNumber.toString());
-        newCertificate.setSubject(subjectAndIssuerName.toString());
-        newCertificate.setIssuer(subjectAndIssuerName.toString());
-        newCertificate.setValidFrom(request.getValidFrom().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
-        newCertificate.setValidTo(request.getValidTo().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
-        newCertificate.setRevoked(false);
-        newCertificate.setCa(true);
-        newCertificate.setType(CertificateType.ROOT);
-        // Čuvamo enkriptovanu lozinku za keystore
-        newCertificate.setEncryptedKeystorePassword(passwordEncoder.encode(keystorePassword));
-
-        return certificateRepository.save(newCertificate);
+        if (!issuer.isCa()) {
+            throw new RuntimeException("Issuer is not a CA.");
+        }
+        if (issuer.isRevoked()) {
+            throw new RuntimeException("Issuer certificate is revoked.");
+        }
+        if (LocalDateTime.now().isAfter(issuer.getValidTo())) {
+            throw new RuntimeException("Issuer certificate has expired.");
+        }
+        if (newCertValidTo.isAfter(issuer.getValidTo())) {
+            throw new RuntimeException("New certificate validity cannot exceed issuer's validity.");
+        }
     }
 
-    private void saveToKeystore(String alias, PrivateKey privateKey, X509Certificate certificate, String password) throws Exception {
-        // Kreiramo direktorijum ako ne postoji
-        Files.createDirectories(Paths.get(KEYSTORE_DIRECTORY));
-        String keystorePath = KEYSTORE_DIRECTORY + alias + ".p12";
+    private IssuerData loadIssuerDataFromKeystore(Certificate issuerEntity) throws Exception {
+        String keystorePath = "src/main/resources/keystores/" + issuerEntity.getSerialNumber() + ".p12";
+        String encryptedPasswordFromDb = issuerEntity.getEncryptedKeystorePassword();
+        if (!passwordEncoder.matches("keystore_pass", encryptedPasswordFromDb)) {
+            throw new SecurityException("Could not decrypt keystore password.");
+        }
+        char[] passwordChars = "keystore_pass".toCharArray();
 
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(null, null); // Inicijalizujemo prazan keystore
+        keyStore.load(new FileInputStream(keystorePath), passwordChars);
 
-        // Postavljamo privatni ključ i lanac sertifikata (za Root, lanac je samo sam sertifikat)
-        keyStore.setKeyEntry(alias, privateKey, password.toCharArray(), new java.security.cert.Certificate[]{certificate});
+        String alias = keyStore.aliases().nextElement();
+        PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, passwordChars);
+        X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
 
-        // Čuvamo keystore u fajl
+        return new IssuerData(privateKey, certificate);
+    }
+
+    private String saveToKeystore(String serialNumber, PrivateKey privateKey, X509Certificate[] chain) throws Exception {
+        String keystorePath = "src/main/resources/keystores/" + serialNumber + ".p12";
+        String keystorePassword = "keystore_pass";
+        char[] passwordChars = keystorePassword.toCharArray();
+
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(null, null);
+
+        keyStore.setKeyEntry(serialNumber, privateKey, passwordChars, chain);
+
         try (FileOutputStream fos = new FileOutputStream(keystorePath)) {
-            keyStore.store(fos, password.toCharArray());
+            keyStore.store(fos, passwordChars);
         }
+
+        return passwordEncoder.encode(keystorePassword);
+    }
+
+    private void addCaExtensions(X509v3CertificateBuilder certificateBuilder) throws Exception {
+        certificateBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+        certificateBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
     }
 
     private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
@@ -133,10 +203,6 @@ public class CertificateService {
         builder.addRDN(BCStyle.C, data.getCountry());
         builder.addRDN(BCStyle.E, data.getEmail());
         return builder.build();
-    }
-
-    private String generateRandomPassword() {
-        return UUID.randomUUID().toString();
     }
 }
 
