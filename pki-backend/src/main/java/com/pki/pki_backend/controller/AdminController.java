@@ -3,6 +3,8 @@ package com.pki.pki_backend.controller;
 import com.pki.pki_backend.dto.CertificateDetailsDTO;
 import com.pki.pki_backend.dto.CreateCaUserRequest;
 import com.pki.pki_backend.dto.IssueCertificateRequestDTO;
+import com.pki.pki_backend.dto.RevokeRequestDTO;
+import com.pki.pki_backend.model.Certificate;
 import com.pki.pki_backend.service.CertificateService;
 import com.pki.pki_backend.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasAuthority('ADMIN')") // Osigurava da samo admin može pristupiti
 public class AdminController {
 
     private final UserService userService;
@@ -25,30 +26,43 @@ public class AdminController {
     }
 
     @PostMapping("/ca-user")
-    // DODATA JE @RequestBody ANOTACIJA
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<String> createCaUser(@RequestBody CreateCaUserRequest request) {
         try {
             userService.createCaUser(request);
-            return ResponseEntity.ok("CA user successfully created. Password sent to email.");
+            return ResponseEntity.ok("CA user created successfully. Password sent to email.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @PostMapping("/certificates/issue")
-    public ResponseEntity<String> issueCertificate(@RequestBody IssueCertificateRequestDTO request) {
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<?> issueCertificate(@RequestBody IssueCertificateRequestDTO request) {
         try {
-            certificateService.issueCertificate(request);
-            return ResponseEntity.ok("Certificate issued successfully.");
+            Certificate newCertificate = certificateService.issueCertificate(request);
+            return ResponseEntity.ok("Certificate issued successfully with serial number: " + newCertificate.getSerialNumber());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error issuing certificate: " + e.getMessage());
         }
     }
+
     @GetMapping("/certificates")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<CertificateDetailsDTO>> getAllCertificates() {
         List<CertificateDetailsDTO> certificates = certificateService.getAll();
         return ResponseEntity.ok(certificates);
+    }
+
+    @PostMapping("/certificates/{serialNumber}/revoke")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<String> revokeCertificate(@PathVariable String serialNumber, @RequestBody RevokeRequestDTO request) {
+        try {
+            certificateService.revokeCertificate(serialNumber, request.getReason());
+            return ResponseEntity.ok("Certificate with serial number " + serialNumber + " has been revoked.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
 

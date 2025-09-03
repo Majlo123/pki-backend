@@ -15,18 +15,22 @@ public class CertificateDetailsDTO {
     private boolean revoked;
     private CertificateType type;
 
-    public CertificateDetailsDTO(Certificate certificate) {
-        this.serialNumber = certificate.getSerialNumber();
-        this.subject = certificate.getSubject();
-        this.issuer = certificate.getIssuer();
-        this.validFrom = certificate.getValidFrom();
-        this.validTo = certificate.getValidTo();
-        this.revoked = certificate.isRevoked();
-        this.type = certificate.getType();
+    // Podrazumevani konstruktor (za svaki slučaj, ali ga ne koristimo direktno)
+    public CertificateDetailsDTO() {
+    }
+
+    // Konstruktor koji prima Certificate objekat i radi mapiranje
+    public CertificateDetailsDTO(Certificate cert) {
+        this.serialNumber = cert.getSerialNumber();
+        this.subject = cert.getSubject();
+        this.issuer = cert.getIssuer();
+        this.validFrom = cert.getValidFrom();
+        this.validTo = cert.getValidTo();
+        this.revoked = cert.isRevoked();
+        this.type = cert.getType();
     }
 
     // Getters and Setters
-
     public String getSerialNumber() {
         return serialNumber;
     }
@@ -83,3 +87,4 @@ public class CertificateDetailsDTO {
         this.type = type;
     }
 }
+
