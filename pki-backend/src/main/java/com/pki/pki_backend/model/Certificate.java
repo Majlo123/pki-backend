@@ -10,54 +10,69 @@ public class Certificate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Serijski broj sertifikata (jedinstven)
     @Column(nullable = false, unique = true)
     private String serialNumber;
 
-    // Subject informacije (npr. CN, O, OU...) - može se mapirati kao string ili objekat
     @Column(nullable = false)
     private String subject;
 
-    // Issuer (informacija o izdavaocu sertifikata)
     @Column(nullable = false)
     private String issuer;
 
-    // Datum od kada važi
     private LocalDateTime validFrom;
-
-    // Datum do kada važi
     private LocalDateTime validTo;
-
-    // Da li je sertifikat povučen
     private boolean revoked;
-
-    // Razlog povlačenja po X.509 standardu (ako postoji)
     private String revocationReason;
-
-    // Vreme kada je povučen (ako jeste)
     private LocalDateTime revocationDate;
-
-    // Da li je CA (true za root i intermediate, false za end-entity)
     private boolean ca;
 
-    // Tip sertifikata: ROOT, INTERMEDIATE, END_ENTITY
     @Enumerated(EnumType.STRING)
     private CertificateType type;
 
-    // Sertifikat u PEM formatu za preuzimanje
     @Lob
-    private String encodedCertificate;
+    private String encodedCertificate; // Ovo polje za sada ne koristimo, ali neka ostane
 
-    // CA keystore lozinka - čuva se enkriptovano (samo za CA certifikate)
     private String encryptedKeystorePassword;
 
-    // JPA veza prema korisniku (vlasniku) sertifikata
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    // Ako je neko drugi issuer ovog sertifikata (npr. za intermediate ili EE)
     @ManyToOne
     @JoinColumn(name = "issuer_certificate_id")
     private Certificate issuerCertificate;
+
+    // Getters
+    public Long getId() { return id; }
+    public String getSerialNumber() { return serialNumber; }
+    public String getSubject() { return subject; }
+    public String getIssuer() { return issuer; }
+    public LocalDateTime getValidFrom() { return validFrom; }
+    public LocalDateTime getValidTo() { return validTo; }
+    public boolean isRevoked() { return revoked; }
+    public String getRevocationReason() { return revocationReason; }
+    public LocalDateTime getRevocationDate() { return revocationDate; }
+    public boolean isCa() { return ca; }
+    public CertificateType getType() { return type; }
+    public String getEncodedCertificate() { return encodedCertificate; }
+    public String getEncryptedKeystorePassword() { return encryptedKeystorePassword; }
+    public User getOwner() { return owner; }
+    public Certificate getIssuerCertificate() { return issuerCertificate; }
+
+    // Setters
+    public void setId(Long id) { this.id = id; }
+    public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
+    public void setSubject(String subject) { this.subject = subject; }
+    public void setIssuer(String issuer) { this.issuer = issuer; }
+    public void setValidFrom(LocalDateTime validFrom) { this.validFrom = validFrom; }
+    public void setValidTo(LocalDateTime validTo) { this.validTo = validTo; }
+    public void setRevoked(boolean revoked) { this.revoked = revoked; }
+    public void setRevocationReason(String revocationReason) { this.revocationReason = revocationReason; }
+    public void setRevocationDate(LocalDateTime revocationDate) { this.revocationDate = revocationDate; }
+    public void setCa(boolean ca) { this.ca = ca; }
+    public void setType(CertificateType type) { this.type = type; }
+    public void setEncodedCertificate(String encodedCertificate) { this.encodedCertificate = encodedCertificate; }
+    public void setEncryptedKeystorePassword(String encryptedKeystorePassword) { this.encryptedKeystorePassword = encryptedKeystorePassword; }
+    public void setOwner(User owner) { this.owner = owner; }
+    public void setIssuerCertificate(Certificate issuerCertificate) { this.issuerCertificate = issuerCertificate; }
 }
