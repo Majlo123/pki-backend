@@ -1,17 +1,102 @@
-2025-09-04 02:20:45,442 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 17140 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
-2025-09-04 02:20:45,443 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
-2025-09-04 02:20:46,601 INFO o.a.j.l.DirectJDKLog [restartedMain] Initializing ProtocolHandler ["http-nio-8080"]
-2025-09-04 02:20:46,602 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting service [Tomcat]
-2025-09-04 02:20:46,602 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting Servlet engine: [Apache Tomcat/10.1.43]
-2025-09-04 02:20:46,641 INFO o.a.j.l.DirectJDKLog [restartedMain] Initializing Spring embedded WebApplicationContext
-2025-09-04 02:20:47,030 INFO c.z.h.HikariDataSource [restartedMain] HikariPool-1 - Starting...
-2025-09-04 02:20:47,131 INFO c.z.h.p.HikariPool [restartedMain] HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4452e0ad
-2025-09-04 02:20:47,132 INFO c.z.h.HikariDataSource [restartedMain] HikariPool-1 - Start completed.
-2025-09-04 02:20:47,155 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2025-09-04 02:20:48,320 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
-2025-09-04 02:20:48,387 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2025-09-04 02:20:48,863 INFO o.a.j.l.DirectJDKLog [restartedMain] Starting ProtocolHandler ["http-nio-8080"]
-2025-09-04 02:20:48,880 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 3.786 seconds (process running for 4.235)
-2025-09-04 02:21:01,259 INFO o.a.j.l.DirectJDKLog [http-nio-8080-exec-1] Initializing Spring DispatcherServlet 'dispatcherServlet'
-2025-09-04 02:21:01,429 INFO c.p.p.a.LoggingAspect [http-nio-8080-exec-1] User: 'admin@pki.com' is starting execution of method: 'getAll'
-2025-09-04 02:21:01,448 INFO c.p.p.a.LoggingAspect [http-nio-8080-exec-1] User: 'admin@pki.com' successfully executed method: 'getAll'
+2025-09-06 02:25:08,740 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 23360 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:25:08,743 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:25:10,409 WARN o.s.c.s.AbstractApplicationContext [restartedMain] Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaConfiguration': Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'spring.jpa-org.springframework.boot.autoconfigure.orm.jpa.JpaProperties': Could not bind properties to 'JpaProperties' : prefix=spring.jpa, ignoreInvalidFields=false, ignoreUnknownFields=true
+2025-09-06 02:25:10,439 ERROR o.s.b.d.LoggingFailureAnalysisReporter [restartedMain] 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Failed to bind properties under 'spring.jpa.show-sql' to boolean:
+
+    Property: spring.jpa.show-sql
+    Value: "false # Isklju?ujemo prikaz SQL-a da bi logovi bili ?istiji"
+    Origin: class path resource [application.properties] - 10:21
+    Reason: failed to convert java.lang.String to boolean (caused by java.lang.IllegalArgumentException: Invalid boolean value 'false # Isklju?ujemo prikaz SQL-a da bi logovi bili ?istiji')
+
+Action:
+
+Update your application's configuration
+
+2025-09-06 02:26:15,305 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 7872 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:26:15,306 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:26:16,686 WARN o.s.c.s.AbstractApplicationContext [restartedMain] Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaConfiguration': Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'spring.jpa-org.springframework.boot.autoconfigure.orm.jpa.JpaProperties': Could not bind properties to 'JpaProperties' : prefix=spring.jpa, ignoreInvalidFields=false, ignoreUnknownFields=true
+2025-09-06 02:26:16,711 ERROR o.s.b.d.LoggingFailureAnalysisReporter [restartedMain] 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Failed to bind properties under 'spring.jpa.show-sql' to boolean:
+
+    Property: spring.jpa.show-sql
+    Value: "false # Isklju?ujemo prikaz SQL-a da bi logovi bili ?istiji"
+    Origin: class path resource [application.properties] - 10:21
+    Reason: failed to convert java.lang.String to boolean (caused by java.lang.IllegalArgumentException: Invalid boolean value 'false # Isklju?ujemo prikaz SQL-a da bi logovi bili ?istiji')
+
+Action:
+
+Update your application's configuration
+
+2025-09-06 02:27:10,194 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 24428 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:27:10,194 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:27:12,108 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-06 02:27:13,540 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-09-06 02:27:13,619 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-06 02:27:14,398 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 4.563 seconds (process running for 5.021)
+2025-09-06 02:28:24,232 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 27992 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:28:24,232 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:28:25,285 WARN o.s.c.s.AbstractApplicationContext [restartedMain] Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2025-09-06 02:28:25,305 ERROR o.s.b.SpringApplication [restartedMain] Application run failed
+org.springframework.context.ApplicationContextException: Unable to start web server
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:170)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:621)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.pki.pki_backend.PkiBackendApplication.main(PkiBackendApplication.java:10)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+Caused by: java.lang.IllegalStateException: Unable to create key store: Could not load store from 'classpath:keystores/3286622555122631916294383807199613397022.p12'
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.createKeyStore(JksSslStoreBundle.java:112)
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.lambda$new$0(JksSslStoreBundle.java:75)
+	at org.springframework.util.function.SingletonSupplier.get(SingletonSupplier.java:106)
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.getKeyStore(JksSslStoreBundle.java:81)
+	at org.springframework.boot.web.server.WebServerSslBundle.createKeyStore(WebServerSslBundle.java:157)
+	at org.springframework.boot.web.server.WebServerSslBundle.createStoreBundle(WebServerSslBundle.java:147)
+	at org.springframework.boot.web.server.WebServerSslBundle.get(WebServerSslBundle.java:142)
+	at org.springframework.boot.web.server.AbstractConfigurableWebServerFactory.getSslBundle(AbstractConfigurableWebServerFactory.java:198)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.customizeSsl(TomcatServletWebServerFactory.java:384)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.customizeConnector(TomcatServletWebServerFactory.java:360)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:209)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:193)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:167)
+	... 11 common frames omitted
+Caused by: java.lang.IllegalStateException: Could not load store from 'classpath:keystores/3286622555122631916294383807199613397022.p12'
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.loadKeyStore(JksSslStoreBundle.java:140)
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.createKeyStore(JksSslStoreBundle.java:107)
+	... 23 common frames omitted
+Caused by: java.io.FileNotFoundException: class path resource [keystores/3286622555122631916294383807199613397022.p12] cannot be opened because it does not exist
+	at org.springframework.core.io.ClassPathResource.getInputStream(ClassPathResource.java:215)
+	at org.springframework.boot.ssl.jks.JksSslStoreBundle.loadKeyStore(JksSslStoreBundle.java:135)
+	... 24 common frames omitted
+2025-09-06 02:28:55,050 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 17492 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:28:55,050 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:28:56,974 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-06 02:28:58,199 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-09-06 02:28:58,268 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-06 02:28:58,901 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 4.2 seconds (process running for 4.7)
+2025-09-06 02:29:21,559 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 19008 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-09-06 02:29:21,560 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-09-06 02:29:23,583 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-06 02:29:24,785 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-09-06 02:29:24,865 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-09-06 02:29:25,489 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 4.289 seconds (process running for 4.817)
