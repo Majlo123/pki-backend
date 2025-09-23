@@ -63,7 +63,7 @@ public class UserService {
         tokenRepository.save(confirmationToken);
 
         // Slanje email-a
-        String confirmationUrl = "http://localhost:8080/api/auth/confirm-email?token=" + token;
+        String confirmationUrl = "https://localhost:8443/api/auth/confirm-email?token=" + token;
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(user.getEmail());
         mailMessage.setSubject("Email Confirmation");
