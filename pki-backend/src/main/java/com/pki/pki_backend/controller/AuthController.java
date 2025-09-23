@@ -1,49 +1,88 @@
 package com.pki.pki_backend.controller;
 
-import com.pki.pki_backend.dto.LoginRequest;
 import com.pki.pki_backend.dto.RegisterUserRequest;
-import com.pki.pki_backend.dto.UserDto;
+import com.pki.pki_backend.model.EmailConfirmationToken;
 import com.pki.pki_backend.model.User;
+import com.pki.pki_backend.repository.EmailConfirmationTokenRepository;
+import com.pki.pki_backend.repository.UserRepository;
 import com.pki.pki_backend.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/auth")
 public class AuthController {
-
+    private final EmailConfirmationTokenRepository tokenRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
     private final UserService userService;
 
-    public AuthController(UserService userService) {
+    public AuthController(EmailConfirmationTokenRepository tokenRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService) {
+        this.tokenRepository = tokenRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
         this.userService = userService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterUserRequest request) {
+    @PostMapping("/api/auth/register")
+    public ResponseEntity<?> register(@RequestBody RegisterUserRequest request) {
         try {
             userService.registerUser(request);
-            return ResponseEntity.ok("Registration successful");
+            return ResponseEntity.ok().body("User registered successfully. Please check your email to confirm your account.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @GetMapping("/me")
-    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User user) {
-        // @AuthenticationPrincipal automatski uzima ulogovanog korisnika iz Security Contexta
-        if (user != null) {
-            UserDto userDto = new UserDto(user.getId(), user.getEmail(), user.getRole().name());
-            return ResponseEntity.ok(userDto);
+
+    @GetMapping("/api/auth/confirm-email")
+    public ResponseEntity<String> confirmEmail(@RequestParam("token") String token) {
+        Optional<EmailConfirmationToken> confirmationTokenOpt = tokenRepository.findByToken(token);
+        if (confirmationTokenOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Invalid confirmation token.");
         }
-        // Ako niko nije ulogovan, Spring Security će svakako vratiti 401 pre nego što se metoda izvrši
-        return ResponseEntity.notFound().build();
+        EmailConfirmationToken confirmationToken = confirmationTokenOpt.get();
+        if (confirmationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("Confirmation token has expired.");
+        }
+        User user = confirmationToken.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+        tokenRepository.delete(confirmationToken);
+        return ResponseEntity.ok("Email confirmed successfully. You can now log in.");
     }
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
-        if (userService.login(request)) {
-            return ResponseEntity.ok("Login successful");
-        } else {
-            return ResponseEntity.status(401).body("Invalid credentials");
+
+    @GetMapping("/api/auth/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Basic ")) {
+            return ResponseEntity.status(401).body("Missing or invalid Authorization header");
+        }
+        String base64Credentials = authHeader.substring("Basic ".length());
+        String credentials = new String(java.util.Base64.getDecoder().decode(base64Credentials));
+        String[] values = credentials.split(":", 2);
+        if (values.length != 2) {
+            return ResponseEntity.status(401).body("Invalid credentials format");
+        }
+        String email = values[0];
+        String password = values[1];
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.status(401).body("Invalid email or password");
+        }
+        // Vraćamo DTO sa email, role, enabled
+        return ResponseEntity.ok(new UserDto(user.getEmail(), user.getRole().name(), user.isEnabled()));
+    }
+
+    public static class UserDto {
+        public String email;
+        public String role;
+        public boolean enabled;
+        public UserDto(String email, String role, boolean enabled) {
+            this.email = email;
+            this.role = role;
+            this.enabled = enabled;
         }
     }
 }

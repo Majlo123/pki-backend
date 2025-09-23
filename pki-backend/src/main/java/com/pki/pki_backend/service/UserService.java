@@ -3,8 +3,10 @@ package com.pki.pki_backend.service;
 import com.pki.pki_backend.dto.CreateCaUserRequest;
 import com.pki.pki_backend.dto.LoginRequest;
 import com.pki.pki_backend.dto.RegisterUserRequest;
+import com.pki.pki_backend.model.EmailConfirmationToken;
 import com.pki.pki_backend.model.Role;
 import com.pki.pki_backend.model.User;
+import com.pki.pki_backend.repository.EmailConfirmationTokenRepository;
 import com.pki.pki_backend.repository.UserRepository;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -21,11 +25,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender; // Potrebno za slanje email-a
+    private final EmailConfirmationTokenRepository tokenRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JavaMailSender mailSender) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JavaMailSender mailSender, EmailConfirmationTokenRepository tokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
+        this.tokenRepository = tokenRepository;
     }
 
     // Javna registracija za obične korisnike
@@ -47,6 +53,22 @@ public class UserService {
         user.setEnabled(false);
 
         userRepository.save(user);
+
+        // Generisanje tokena
+        String token = UUID.randomUUID().toString();
+        EmailConfirmationToken confirmationToken = new EmailConfirmationToken();
+        confirmationToken.setToken(token);
+        confirmationToken.setUser(user);
+        confirmationToken.setExpiryDate(LocalDateTime.now().plusHours(24));
+        tokenRepository.save(confirmationToken);
+
+        // Slanje email-a
+        String confirmationUrl = "http://localhost:8080/api/auth/confirm-email?token=" + token;
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(user.getEmail());
+        mailMessage.setSubject("Email Confirmation");
+        mailMessage.setText("Please confirm your email by clicking the following link: " + confirmationUrl);
+        mailSender.send(mailMessage);
     }
 
     /**
@@ -95,4 +117,3 @@ public class UserService {
                 .collect(Collectors.joining());
     }
 }
-
