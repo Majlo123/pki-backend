@@ -6,6 +6,7 @@ import com.pki.pki_backend.model.User;
 import com.pki.pki_backend.repository.EmailConfirmationTokenRepository;
 import com.pki.pki_backend.repository.UserRepository;
 import com.pki.pki_backend.service.UserService;
+import com.pki.pki_backend.service.CaptchaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,12 +20,14 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
+    private final CaptchaService captchaService;
 
-    public AuthController(EmailConfirmationTokenRepository tokenRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService) {
+    public AuthController(EmailConfirmationTokenRepository tokenRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, UserService userService, CaptchaService captchaService) {
         this.tokenRepository = tokenRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.captchaService = captchaService;
     }
 
     @PostMapping("/api/auth/register")
@@ -55,7 +58,15 @@ public class AuthController {
     }
 
     @GetMapping("/api/auth/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<?> getCurrentUser(
+        @RequestHeader(value = "Authorization", required = false) String authHeader,
+        @RequestHeader(value = "X-Captcha-Token", required = false) String captchaToken) {
+        
+        // Validacija captcha tokena
+        if (captchaToken != null && !captchaService.verifyCaptcha(captchaToken)) {
+            return ResponseEntity.status(400).body("Invalid captcha");
+        }
+        
         if (authHeader == null || !authHeader.startsWith("Basic ")) {
             return ResponseEntity.status(401).body("Missing or invalid Authorization header");
         }
