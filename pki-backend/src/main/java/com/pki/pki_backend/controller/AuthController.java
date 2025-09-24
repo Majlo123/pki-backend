@@ -62,11 +62,14 @@ public class AuthController {
         @RequestHeader(value = "Authorization", required = false) String authHeader,
         @RequestHeader(value = "X-Captcha-Token", required = false) String captchaToken) {
         
-        // Validacija captcha tokena
+        // Privremeno isključujemo captcha validaciju za development
+        // TODO: Omogućiti captcha validaciju u produkciji
+        /*
         if (captchaToken != null && !captchaService.verifyCaptcha(captchaToken)) {
             return ResponseEntity.status(400).body("Invalid captcha");
         }
-        
+        */
+
         if (authHeader == null || !authHeader.startsWith("Basic ")) {
             return ResponseEntity.status(401).body("Missing or invalid Authorization header");
         }
