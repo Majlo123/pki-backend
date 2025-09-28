@@ -1,5 +1,6 @@
 package com.pki.pki_backend.config;
 
+import com.pki.pki_backend.security.JwtAuthenticationFilter;
 import com.pki.pki_backend.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -26,9 +28,12 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService, 
+                         JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
     @Bean
@@ -72,9 +77,11 @@ public class SecurityConfig {
                 .cors(withDefaults()) // AŽURIRANO: Aktivira CORS konfiguraciju definisanu iznad
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // AŽURIRANO: Sada smo precizniji. Samo registracija je javna.
+                        // AŽURIRANO: Sada smo precizniji. Samo registracija i login su javni.
                         .requestMatchers(
-                                "/api/auth/register", // Dozvoljavamo samo registraciju
+                                "/api/auth/register", // Dozvoljavamo registraciju
+                                "/api/auth/login",    // Dozvoljavamo JWT login
+                                "/api/auth/confirm-email", // Dozvoljavamo potvrdu email-a
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
@@ -83,7 +90,9 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                .httpBasic(withDefaults());
+                // Dodajemo JWT filter pre UsernamePasswordAuthenticationFilter-a
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .httpBasic(withDefaults()); // Zadržavamo i Basic Auth kao fallback
 
         return http.build();
     }
