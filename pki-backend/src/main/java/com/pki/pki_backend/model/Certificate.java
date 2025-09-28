@@ -29,8 +29,8 @@ public class Certificate {
     @Enumerated(EnumType.STRING)
     private CertificateType type;
 
-    @Lob
-    private String encodedCertificate; // Ovo polje za sada ne koristimo, ali neka ostane
+    @Column(columnDefinition = "TEXT")
+    private String encodedCertificate; // Base64 encoded certificate content
 
     private String encryptedKeystorePassword;
 
@@ -41,6 +41,10 @@ public class Certificate {
     @ManyToOne
     @JoinColumn(name = "issuer_certificate_id")
     private Certificate issuerCertificate;
+
+    @OneToOne
+    @JoinColumn(name = "certificate_request_id")
+    private CertificateRequest certificateRequest; // Zahtev na osnovu kojeg je izdat
 
     // Getters
     public Long getId() { return id; }
@@ -58,6 +62,7 @@ public class Certificate {
     public String getEncryptedKeystorePassword() { return encryptedKeystorePassword; }
     public User getOwner() { return owner; }
     public Certificate getIssuerCertificate() { return issuerCertificate; }
+    public CertificateRequest getCertificateRequest() { return certificateRequest; }
 
     // Setters
     public void setId(Long id) { this.id = id; }
@@ -75,4 +80,5 @@ public class Certificate {
     public void setEncryptedKeystorePassword(String encryptedKeystorePassword) { this.encryptedKeystorePassword = encryptedKeystorePassword; }
     public void setOwner(User owner) { this.owner = owner; }
     public void setIssuerCertificate(Certificate issuerCertificate) { this.issuerCertificate = issuerCertificate; }
+    public void setCertificateRequest(CertificateRequest certificateRequest) { this.certificateRequest = certificateRequest; }
 }

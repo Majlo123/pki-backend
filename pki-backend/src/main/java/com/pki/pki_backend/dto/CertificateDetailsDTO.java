@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 public class CertificateDetailsDTO {
 
+    private Long id;
     private String serialNumber;
     private String subject;
     private String issuer;
@@ -21,6 +22,7 @@ public class CertificateDetailsDTO {
 
     // Konstruktor koji prima Certificate objekat i radi mapiranje
     public CertificateDetailsDTO(Certificate cert) {
+        this.id = cert.getId();
         this.serialNumber = cert.getSerialNumber();
         this.subject = cert.getSubject();
         this.issuer = cert.getIssuer();
@@ -31,6 +33,14 @@ public class CertificateDetailsDTO {
     }
 
     // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getSerialNumber() {
         return serialNumber;
     }

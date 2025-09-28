@@ -116,4 +116,8 @@ public class UserService {
                 .mapToObj(randomIndex -> String.valueOf(CHARS.charAt(randomIndex)))
                 .collect(Collectors.joining());
     }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
 }

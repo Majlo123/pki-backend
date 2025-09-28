@@ -5,6 +5,7 @@ import com.pki.pki_backend.dto.IssueCertificateRequestDTO;
 import com.pki.pki_backend.dto.SubjectDataDTO;
 import com.pki.pki_backend.model.Certificate;
 import com.pki.pki_backend.model.CertificateType;
+import com.pki.pki_backend.model.User;
 import com.pki.pki_backend.repository.CertificateRepository;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -153,6 +154,29 @@ public class CertificateService {
         certificateRepository.save(certificate);
     }
 
+    public List<CertificateDetailsDTO> getUserCertificates(User user) {
+        List<Certificate> certificates = certificateRepository.findByOwner(user);
+        return certificates.stream()
+                .map(CertificateDetailsDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    public Certificate getCertificateById(Long certificateId) {
+        return certificateRepository.findById(certificateId)
+                .orElseThrow(() -> new RuntimeException("Sertifikat ne postoji"));
+    }
+
+    public List<CertificateDetailsDTO> getActiveCaCertificates() {
+        List<Certificate> caCertificates = certificateRepository.findByCaAndRevoked(true, false);
+        return caCertificates.stream()
+                .map(CertificateDetailsDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    public void saveCertificate(Certificate certificate) {
+        certificateRepository.save(certificate);
+    }
+
     private void validateIssuer(Certificate issuer, Date newCertValidToDate) {
         LocalDateTime newCertValidTo = newCertValidToDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         if (!issuer.isCa()) {
@@ -170,14 +194,32 @@ public class CertificateService {
     }
 
     private IssuerData loadIssuerDataFromKeystore(Certificate issuerEntity) throws Exception {
+        // Pokušaj sa relativnom putanjom iz classpath-a
         String keystorePath = "src/main/resources/keystores/" + issuerEntity.getSerialNumber() + ".p12";
+        String keystoreResourcePath = "keystores/" + issuerEntity.getSerialNumber() + ".p12";
+
         String encryptedPasswordFromDb = issuerEntity.getEncryptedKeystorePassword();
         if (!passwordEncoder.matches("keystore_pass", encryptedPasswordFromDb)) {
             throw new SecurityException("Could not decrypt keystore password.");
         }
+
         char[] passwordChars = "keystore_pass".toCharArray();
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(new FileInputStream(keystorePath), passwordChars);
+
+        try {
+            // Prvo pokušaj sa file system putanjom
+            keyStore.load(new FileInputStream(keystorePath), passwordChars);
+        } catch (Exception e) {
+            // Ako ne uspe, pokušaj da učitas iz classpath-a
+            var resourceStream = getClass().getClassLoader().getResourceAsStream(keystoreResourcePath);
+            if (resourceStream != null) {
+                keyStore.load(resourceStream, passwordChars);
+                resourceStream.close();
+            } else {
+                throw new RuntimeException("Keystore fajl nije pronađen: " + keystorePath);
+            }
+        }
+
         String alias = keyStore.aliases().nextElement();
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(alias, passwordChars);
         X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
@@ -222,5 +264,31 @@ public class CertificateService {
         builder.addRDN(BCStyle.E, data.getEmail());
         return builder.build();
     }
-}
 
+    public PrivateKey getPrivateKeyFromKeystore(String serialNumber) throws Exception {
+        String keystorePath = "src/main/resources/keystores/" + serialNumber + ".p12";
+        String keystoreResourcePath = "keystores/" + serialNumber + ".p12";
+        String keystorePassword = "keystore_pass";
+
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+
+        try {
+            // Prvo pokušaj sa file system putanjom
+            try (FileInputStream fis = new FileInputStream(keystorePath)) {
+                keyStore.load(fis, keystorePassword.toCharArray());
+            }
+        } catch (Exception e) {
+            // Ako ne uspe, pokušaj da učitas iz classpath-a
+            var resourceStream = getClass().getClassLoader().getResourceAsStream(keystoreResourcePath);
+            if (resourceStream != null) {
+                keyStore.load(resourceStream, keystorePassword.toCharArray());
+                resourceStream.close();
+            } else {
+                throw new RuntimeException("Keystore fajl nije pronađen: " + keystorePath);
+            }
+        }
+
+        String alias = keyStore.aliases().nextElement();
+        return (PrivateKey) keyStore.getKey(alias, keystorePassword.toCharArray());
+    }
+}
