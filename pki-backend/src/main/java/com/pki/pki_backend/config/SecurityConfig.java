@@ -85,6 +85,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        // Password manager endpoints - dostupni samo autentifikovanim EE korisnicima
+                        .requestMatchers("/api/password-manager/**").authenticated()
                         // Svi ostali zahtevi (uključujući /api/auth/me) moraju biti autentifikovani
                         .anyRequest().authenticated()
                 )
@@ -97,4 +99,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
