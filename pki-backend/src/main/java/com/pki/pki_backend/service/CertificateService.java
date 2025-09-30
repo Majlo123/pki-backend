@@ -5,10 +5,15 @@ import com.pki.pki_backend.dto.IssueCertificateRequestDTO;
 import com.pki.pki_backend.dto.SubjectDataDTO;
 import com.pki.pki_backend.model.Certificate;
 import com.pki.pki_backend.model.CertificateType;
+import com.pki.pki_backend.model.Role;
+import com.pki.pki_backend.model.User;
 import com.pki.pki_backend.repository.CertificateRepository;
+import com.pki.pki_backend.repository.UserRepository;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
@@ -19,6 +24,9 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +46,7 @@ public class CertificateService {
 
     private final CertificateRepository certificateRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
     private static class IssuerData {
         private final PrivateKey privateKey;
@@ -51,13 +60,19 @@ public class CertificateService {
         public X509Certificate getCertificate() { return certificate; }
     }
 
-    public CertificateService(CertificateRepository certificateRepository, PasswordEncoder passwordEncoder) {
+    public CertificateService(CertificateRepository certificateRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.certificateRepository = certificateRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         Security.addProvider(new BouncyCastleProvider());
     }
 
     public Certificate issueCertificate(IssueCertificateRequestDTO request) throws Exception {
+        //Dobavljanje trenutno ulogovanog korisnika
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database."));
+
         KeyPair keyPair = generateKeyPair();
         X500Name subjectName = buildX500Name(request.getSubjectData());
         String serialNumber = new BigInteger(128, new SecureRandom()).toString();
@@ -69,12 +84,19 @@ public class CertificateService {
         Certificate certificateEntity = new Certificate();
         String encryptedPassword = null;
 
+        //Postavljanje vlasnika na novom sertifikatu
+        certificateEntity.setOwner(currentUser);
+
         if (request.getType() == CertificateType.ROOT || request.getType() == CertificateType.INTERMEDIATE) {
             IssuerData issuerData;
             X509Certificate[] chain;
             X509v3CertificateBuilder certificateBuilder;
 
             if (request.getType() == CertificateType.ROOT) {
+                //Samo admin može da kreira Root sertifikat
+                if (currentUser.getRole() != Role.ADMIN) {
+                    throw new AccessDeniedException("Only Administrators can issue Root certificates.");
+                }
                 certificateBuilder = new JcaX509v3CertificateBuilder(
                         subjectName, new BigInteger(serialNumber), validFrom, validTo, subjectName, keyPair.getPublic());
                 ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
@@ -86,6 +108,14 @@ public class CertificateService {
             } else {
                 Certificate issuerEntity = certificateRepository.findBySerialNumber(request.getIssuerSerialNumber())
                         .orElseThrow(() -> new RuntimeException("Issuer certificate not found."));
+
+                //LOGIKA ZA PROVERU ORGANIZACIJE
+                if (currentUser.getRole() == Role.CA_USER) {
+                    String issuerOrganization = extractOrganizationFromDn(issuerEntity.getSubject());
+                    if (issuerEntity.getOwner() == null || !issuerOrganization.equals(currentUser.getOrganization())) {
+                        throw new AccessDeniedException("CA Users can only use issuers from their own organization.");
+                    }
+                }
                 validateIssuer(issuerEntity, validTo);
                 issuerData = loadIssuerDataFromKeystore(issuerEntity);
                 certificateBuilder = new JcaX509v3CertificateBuilder(
@@ -105,6 +135,13 @@ public class CertificateService {
         } else if (request.getType() == CertificateType.END_ENTITY) {
             Certificate issuerEntity = certificateRepository.findBySerialNumber(request.getIssuerSerialNumber())
                     .orElseThrow(() -> new RuntimeException("Issuer certificate not found."));
+
+            //LOGIKA ZA PROVERU ORGANIZACIJE
+            if (currentUser.getRole() == Role.CA_USER) {
+                if (issuerEntity.getOwner() == null || !issuerEntity.getOwner().getOrganization().equals(currentUser.getOrganization())) {
+                    throw new AccessDeniedException("CA Users can only use issuers from their own organization.");
+                }
+            }
             validateIssuer(issuerEntity, validTo);
             IssuerData issuerData = loadIssuerDataFromKeystore(issuerEntity);
             X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
@@ -132,16 +169,57 @@ public class CertificateService {
         return certificateRepository.save(certificateEntity);
     }
 
+    private String extractOrganizationFromDn(String dnString) {
+        try {
+            X500Name x500Name = new X500Name(dnString);
+            RDN[] rdns = x500Name.getRDNs(BCStyle.O);
+
+            if (rdns.length > 0) {
+                // Uzimamo prvi (i obično jedini) RDN za organizaciju
+                return IETFUtils.valueToString(rdns[0].getFirst().getValue());
+            }
+        } catch (Exception e) {
+            // U slučaju lošeg formata stringa, vraćamo null
+            return null;
+        }
+        return null;
+    }
     public List<CertificateDetailsDTO> getAll() {
-        // Sada koristimo direktno konstruktor iz DTO klase za mapiranje
-        return certificateRepository.findAll().stream()
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database."));
+
+        List<Certificate> certificates = List.of();
+        if (currentUser.getRole() == Role.ADMIN) {
+            certificates = certificateRepository.findAll();
+        } else if (currentUser.getRole() == Role.CA_USER) {
+            certificates = certificateRepository.findAllByOrganization("O=" + currentUser.getOrganization());
+
+        } /*else {
+            // Za običnog korisnika, vraćamo samo njegove sertifikate
+            certificates = certificateRepository.findAllByOwner(currentUser);
+        }*/
+
+        return certificates.stream()
                 .map(CertificateDetailsDTO::new)
                 .collect(Collectors.toList());
     }
 
     public void revokeCertificate(String serialNumber, String reason) {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database."));
+
         Certificate certificate = certificateRepository.findBySerialNumber(serialNumber)
                 .orElseThrow(() -> new RuntimeException("Certificate with serial number " + serialNumber + " not found."));
+
+        // Provera autorizacije
+        if (currentUser.getRole() == Role.CA_USER) {
+            if (certificate.getOwner() == null || !certificate.getOwner().getOrganization().equals(currentUser.getOrganization())) {
+                throw new AccessDeniedException("You do not have permission to revoke this certificate.");
+            }
+        }
+        // Admin može sve, ne treba mu provera
 
         if (certificate.isRevoked()) {
             throw new RuntimeException("Certificate is already revoked.");
@@ -151,6 +229,48 @@ public class CertificateService {
         certificate.setRevocationReason(reason);
         certificate.setRevocationDate(LocalDateTime.now());
         certificateRepository.save(certificate);
+    }
+    //Metoda za preuzimanje sertifikata
+    public byte[] getCertificateForDownload(String serialNumber) throws Exception {
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database."));
+
+        Certificate certificateEntity = certificateRepository.findBySerialNumber(serialNumber)
+                .orElseThrow(() -> new RuntimeException("Certificate not found."));
+
+        // Provera autorizacije
+        if (currentUser.getRole() == Role.CA_USER) {
+            if (certificateEntity.getOwner() == null || !certificateEntity.getOwner().getOrganization().equals(currentUser.getOrganization())) {
+                throw new AccessDeniedException("You do not have permission to download this certificate.");
+            }
+        }
+
+        String keystorePath = "src/main/resources/keystores/" + certificateEntity.getSerialNumber() + ".p12";
+        char[] passwordChars;
+
+        // Za end-entity sertifikate ne čuvamo keystore, već samo sertifikat
+        if (certificateEntity.getType() == CertificateType.END_ENTITY) {
+            // Ovde bi trebalo implementirati logiku za čitanje .der ili .pem fajla ako se tako čuvaju
+            // Za sada, pretpostavljamo da svi imaju keystore radi jednostavnosti primera.
+            // U realnoj aplikaciji, razdvojili biste logiku.
+        }
+
+        // Dekripcija lozinke za keystore (ako je enkriptovana)
+        String encryptedPasswordFromDb = certificateEntity.getEncryptedKeystorePassword();
+        if (encryptedPasswordFromDb != null && passwordEncoder.matches("keystore_pass", encryptedPasswordFromDb)) {
+            passwordChars = "keystore_pass".toCharArray();
+        } else {
+            // Fallback ili greška ako lozinka nije ispravna
+            throw new SecurityException("Could not decrypt keystore password.");
+        }
+
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(new FileInputStream(keystorePath), passwordChars);
+        String alias = keyStore.aliases().nextElement();
+        X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
+
+        return certificate.getEncoded();
     }
 
     private void validateIssuer(Certificate issuer, Date newCertValidToDate) {
