@@ -1,33 +1,34 @@
-2025-09-28 13:32:44,902 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 17.0.12 with PID 9732 (C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend\target\classes started by spasa in C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend)
-2025-09-28 13:32:44,915 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
-2025-09-28 13:32:47,697 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2025-09-28 13:32:49,508 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
-2025-09-28 13:32:49,601 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2025-09-28 13:32:50,316 WARN o.s.b.d.a.OptionalLiveReloadServer [restartedMain] Unable to start LiveReload server
-2025-09-28 13:32:50,338 WARN o.s.c.s.AbstractApplicationContext [restartedMain] Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
-2025-09-28 13:32:50,408 ERROR o.s.b.d.LoggingFailureAnalysisReporter [restartedMain] 
-
-***************************
-APPLICATION FAILED TO START
-***************************
-
-Description:
-
-Web server failed to start. Port 8443 was already in use.
-
-Action:
-
-Identify and stop the process that's listening on port 8443 or configure this application to listen on another port.
-
-2025-09-28 14:22:31,386 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 17.0.12 with PID 14404 (C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend\target\classes started by spasa in C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend)
-2025-09-28 14:22:31,390 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
-2025-09-28 14:22:33,878 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2025-09-28 14:22:35,923 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
-2025-09-28 14:22:36,079 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2025-09-28 14:22:36,950 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 6.152 seconds (process running for 6.558)
-2025-09-28 14:29:54,839 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 17.0.12 with PID 17716 (C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend\target\classes started by spasa in C:\Users\spasa\OneDrive\Desktop\majlo\pki-backend\pki-backend)
-2025-09-28 14:29:54,842 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
-2025-09-28 14:29:57,174 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2025-09-28 14:29:59,197 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
-2025-09-28 14:29:59,345 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2025-09-28 14:30:00,215 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 5.856 seconds (process running for 6.238)
+2025-10-08 06:04:45,039 INFO o.s.b.StartupInfoLogger [restartedMain] Starting PkiBackendApplication using Java 23.0.1 with PID 7580 (C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend\target\classes started by Korisnik in C:\Users\Korisnik\Documents\GitHub\pki-backend\pki-backend)
+2025-10-08 06:04:45,041 INFO o.s.b.SpringApplication [restartedMain] No active profile set, falling back to 1 default profile: "default"
+2025-10-08 06:04:46,810 WARN o.h.e.j.d.i.DialectFactoryImpl [restartedMain] HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-10-08 06:04:48,549 WARN o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer [restartedMain] Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-10-08 06:04:48,678 WARN o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration [restartedMain] spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-10-08 06:04:49,387 INFO o.s.b.StartupInfoLogger [restartedMain] Started PkiBackendApplication in 4.688 seconds (process running for 5.141)
+2025-10-08 06:04:49,392 INFO c.p.p.a.LoggingAspect [scheduling-1] User: 'anonymous' is starting execution of method: 'SessionCleanupService.cleanupExpiredSessions'
+2025-10-08 06:04:49,396 INFO c.p.p.a.LoggingAspect [scheduling-1] User: 'anonymous' is starting execution of method: 'JwtSessionService.cleanupAllExpiredSessions'
+2025-10-08 06:04:49,476 INFO c.p.p.a.LoggingAspect [scheduling-1] User: 'anonymous' successfully executed method: 'JwtSessionService.cleanupAllExpiredSessions'
+2025-10-08 06:04:49,478 INFO c.p.p.a.LoggingAspect [scheduling-1] User: 'anonymous' successfully executed method: 'SessionCleanupService.cleanupExpiredSessions'
+2025-10-08 06:11:46,610 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' is starting execution of method: 'AuthController.login'
+2025-10-08 06:11:46,671 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' is starting execution of method: 'CustomUserDetailsService.loadUserByUsername'
+2025-10-08 06:11:46,685 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' successfully executed method: 'CustomUserDetailsService.loadUserByUsername'
+2025-10-08 06:11:46,744 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' is starting execution of method: 'JwtService.generateToken'
+2025-10-08 06:11:46,790 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' is starting execution of method: 'JwtSessionService.addActiveSession'
+2025-10-08 06:11:46,826 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' successfully executed method: 'JwtSessionService.addActiveSession'
+2025-10-08 06:11:46,828 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' successfully executed method: 'JwtService.generateToken'
+2025-10-08 06:11:46,830 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-9] User: 'anonymousUser' successfully executed method: 'AuthController.login'
+2025-10-08 06:11:46,862 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'JwtService.extractUsername'
+2025-10-08 06:11:46,885 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'JwtService.extractUsername'
+2025-10-08 06:11:46,885 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'CustomUserDetailsService.loadUserByUsername'
+2025-10-08 06:11:46,886 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'CustomUserDetailsService.loadUserByUsername'
+2025-10-08 06:11:46,886 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'JwtService.isTokenValid'
+2025-10-08 06:11:46,888 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'JwtSessionService.isSessionActive'
+2025-10-08 06:11:46,891 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'JwtSessionService.isSessionActive'
+2025-10-08 06:11:46,892 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'JwtSessionService.isSessionActive'
+2025-10-08 06:11:46,894 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'JwtSessionService.isSessionActive'
+2025-10-08 06:11:46,894 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'JwtService.isTokenValid'
+2025-10-08 06:11:46,895 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' is starting execution of method: 'JwtSessionService.updateLastAccessed'
+2025-10-08 06:11:46,897 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'anonymous' successfully executed method: 'JwtSessionService.updateLastAccessed'
+2025-10-08 06:11:46,911 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'admin@pki.com' is starting execution of method: 'AdminController.getAllCertificates'
+2025-10-08 06:11:46,911 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'admin@pki.com' is starting execution of method: 'CertificateService.getAll'
+2025-10-08 06:11:46,929 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'admin@pki.com' successfully executed method: 'CertificateService.getAll'
+2025-10-08 06:11:46,930 INFO c.p.p.a.LoggingAspect [https-jsse-nio-8443-exec-8] User: 'admin@pki.com' successfully executed method: 'AdminController.getAllCertificates'
